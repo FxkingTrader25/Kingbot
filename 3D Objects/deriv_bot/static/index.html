@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="pt" class="light">
+<head>
+  <meta charset="UTF-8">
+  <title>👑 KingBot - Painel de Controle Profissional</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* === ESTRUTURA DE ESTILOS === */
+    :root {
+      /* Cores base (Light Mode) */
+      --color-bg: #f1f5f9; /* slate-100 */
+      --color-text: #0f172a; /* slate-900 */
+      --color-card-bg: #ffffff; /* white */
+      --color-border: #e2e8f0; /* slate-200 */
+      --color-input-bg: #ffffff;
+      --color-input-border: #cbd5e1; /* slate-300 */
+      --color-heading: #1e293b; /* slate-800 */
+      --color-muted: #64748b; /* slate-500 */
+      
+      /* Cores de Acento */
+      --color-primary: #4f46e5; /* indigo-600 */
+      --color-primary-hover: #4338ca; /* indigo-700 */
+      --color-primary-text: #ffffff;
+      
+      --color-danger: #dc2626; /* red-600 */
+      --color-danger-hover: #b91c1c; /* red-700 */
+      
+      --color-success: #16a34a; /* green-600 */
+      --color-warning: #f59e0b; /* amber-500 */
+      --color-info: #2563eb; /* blue-600 */
+    }
+
+    .dark {
+      /* Cores (Dark Mode) */
+      --color-bg: #0f172a; /* slate-900 */
+      --color-text: #e2e8f0; /* slate-200 */
+      --color-card-bg: #1e293b; /* slate-800 */
+      --color-border: #334155; /* slate-700 */
+      --color-input-bg: #334155; /* slate-700 */
+      --color-input-border: #475569; /* slate-600 */
+      --color-heading: #f1f5f9; /* slate-100 */
+      --color-muted: #94a3b8; /* slate-400 */
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    
+    h1, h2, h3 { font-family: 'Lexend', sans-serif; }
+
+    .btn {
+      @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-semibold text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200;
+    }
+    .btn-primary { 
+      background-color: var(--color-primary); color: var(--color-primary-text);
+      @apply hover:bg-opacity-90 focus:ring-[var(--color-primary)];
+    }
+    .btn-danger {
+      background-color: var(--color-danger); color: var(--color-primary-text);
+      @apply hover:bg-opacity-90 focus:ring-[var(--color-danger)];
+    }
+    .btn-secondary {
+      background-color: var(--color-card-bg); color: var(--color-text);
+      border: 1px solid var(--color-border);
+      @apply hover:bg-[var(--color-bg)] focus:ring-[var(--color-primary)];
+    }
+
+    .input-field {
+      @apply w-full px-3 py-2 text-sm rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition;
+      background-color: var(--color-input-bg);
+      border: 1px solid var(--color-input-border);
+      color: var(--color-text);
+    }
+    
+    .input-field:disabled { @apply bg-slate-200 dark:bg-slate-800 cursor-not-allowed; }
+    
+    .card {
+      background-color: var(--color-card-bg);
+      border: 1px solid var(--color-border);
+      @apply rounded-xl shadow-md p-6;
+    }
+
+    .log-entry { @apply p-2.5 rounded-md mb-2 text-xs leading-relaxed border; }
+    .log-info { border-color: #93c5fd; background-color: #eff6ff; color: #1e40af; }
+    .log-success { border-color: #86efac; background-color: #f0fdf4; color: #15803d; }
+    .log-warning { border-color: #fcd34d; background-color: #fffbeb; color: #b45309; }
+    .log-error { border-color: #fca5a5; background-color: #fef2f2; color: #b91c1c; }
+    .dark .log-info { border-color: #3b82f6; background-color: #1e293b; color: #bfdbfe; }
+    .dark .log-success { border-color: #4ade80; background-color: #1e293b; color: #bbf7d0; }
+    .dark .log-warning { border-color: #facc15; background-color: #1e293b; color: #fde68a; }
+    .dark .log-error { border-color: #f87171; background-color: #1e293b; color: #fecaca; }
+
+    /* Spinner */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-left-color: #ffffff;
+      @apply rounded-full w-5 h-5 animate-spin;
+      display: none;
+    }
+    .btn .spinner-active { display: inline-block; }
+
+    /* Estratégias */
+    .strategy-group {
+      border: 1px solid var(--color-border);
+      @apply bg-transparent p-3 rounded-lg;
+    }
+    .strategy-group-header { @apply flex items-center justify-between cursor-pointer; }
+    .strategy-group-content { @apply mt-4 pt-4 border-t border-[var(--color-border)] space-y-3; }
+
+    /* For theme toggle button inside the header */
+    .header-theme-toggle {
+        @apply p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300;
+    }
+
+    /* Notification container */
+    #notification-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        width: 100%;
+        max-width: 350px;
+    }
+    .notification-item {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        opacity: 0;
+        transform: translateY(-20px);
+        animation: slideIn 0.3s forwards;
+    }
+    .notification-item.dismiss {
+        animation: slideOut 0.3s forwards;
+    }
+
+    /* Notification types */
+    .notification-success {
+        background-color: #d1fae5; /* green-100 */
+        color: #065f46; /* green-800 */
+    }
+    .notification-error {
+        background-color: #fee2e2; /* red-100 */
+        color: #991b1b; /* red-800 */
+    }
+    .notification-warning {
+        background-color: #fffbeb; /* yellow-100 */
+        color: #92400e; /* yellow-800 */
+    }
+    .notification-info {
+        background-color: #dbeafe; /* blue-100 */
+        color: #1e40af; /* blue-800 */
+    }
+
+    /* Dark mode for notifications */
+    .dark .notification-success {
+        background-color: #1e293b; /* slate-800 */
+        color: #bbf7d0; /* green-200 */
+        border: 1px solid #22c55e;
+    }
+    .dark .notification-error {
+        background-color: #1e293b;
+        color: #fca5a5; /* red-300 */
+        border: 1px solid #ef4444;
+    }
+    .dark .notification-warning {
+        background-color: #1e293b;
+        color: #fde047; /* yellow-300 */
+        border: 1px solid #f59e0b;
+    }
+    .dark .notification-info {
+        background-color: #1e293b;
+        color: #93c5fd; /* blue-300 */
+        border: 1px solid #3b82f6;
+    }
+
+    .notification-close-btn {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        font-weight: bold;
+        cursor: pointer;
+        line-height: 1;
+        margin-left: 1rem;
+        color: inherit; /* Inherit color from parent notification */
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideOut {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(100%); }
+    }
+  </style>
+</head>
+<body class="light">
+  
+  <div class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="auth-section" class="w-full max-w-md mx-auto">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-900 dark:text-white">👑 KingBot</h1>
+        <p class="text-base text-gray-600 dark:text-gray-400 mt-2">Aceda ao seu Painel de Controle</p>
+      </div>
+      
+      <div class="card">
+        <div id="loginCard">
+          <h2 class="text-2xl font-semibold mb-6 text-center text-heading">Login</h2>
+          <form id="loginForm" class="space-y-4">
+            <div>
+              <label for="loginUsername" class="block text-sm font-medium text-muted">Usuário:</label>
+              <input type="text" id="loginUsername" name="username" required class="mt-1 input-field">
+            </div>
+            <div>
+              <label for="loginPassword" class="block text-sm font-medium text-muted">Senha:</label>
+              <input type="password" id="loginPassword" name="password" required class="mt-1 input-field">
+            </div>
+            <button type="submit" class="btn btn-primary w-full !py-2.5 !text-base">
+              Entrar <div id="loginSpinner" class="spinner ml-2"></div>
+            </button>
+          </form>
+          <p class="mt-6 text-center text-sm text-muted">
+            Não tem uma conta? <button id="showRegisterBtn" class="font-semibold text-[var(--color-primary)] hover:underline">Registe-se</button>
+          </p>
+        </div>
+
+        <div id="registerCard" class="hidden">
+           <h2 class="text-2xl font-semibold mb-6 text-center text-heading">Criar Nova Conta</h2>
+          <form id="registerForm" class="space-y-4">
+            <div>
+              <label for="registerUsername" class="block text-sm font-medium text-muted">Usuário:</label>
+              <input type="text" id="registerUsername" name="username" required class="mt-1 input-field">
+            </div>
+            <div>
+              <label for="registerPassword" class="block text-sm font-medium text-muted">Senha:</label>
+              <input type="password" id="registerPassword" name="password" required class="mt-1 input-field">
+            </div>
+            <button type="submit" class="btn btn-secondary w-full !py-2.5 !text-base">
+              Registar <div id="registerSpinner" class="spinner ml-2"></div>
+            </button>
+          </form>
+          <p class="mt-6 text-center text-sm text-muted">
+            Já tem uma conta? <button id="showLoginBtn" class="font-semibold text-[var(--color-primary)] hover:underline">Login</button>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div id="dashboard-section" class="hidden w-full max-w-7xl mx-auto">
+      <header class="flex justify-between items-center mb-6">
+        <div>
+           <h1 class="text-3xl font-bold text-heading">👑 Painel de Controle</h1>
+           <p class="text-muted">Bem-vindo, <span id="usernameDisplay" class="font-semibold text-text"></span>!</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button id="themeToggleBtn" class="header-theme-toggle">🌙</button>
+          <button id="logoutBtn" class="btn btn-secondary">Sair</button>
+        </div>
+      </header>
+
+      <!-- Notification Container -->
+      <div id="notification-container"></div>
+
+      <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-1 space-y-6">
+          <div class="card">
+             <h2 class="text-xl font-bold text-heading mb-4">Controle do Bot</h2>
+             <div class="p-4 rounded-lg bg-[var(--color-bg)] space-y-4">
+                <div class="flex justify-between items-center">
+                  <span class="font-semibold">Status:</span>
+                  <span id="botStatus" class="px-3 py-1 rounded-full text-sm font-bold">Parado</span>
+                </div>
+                <div id="accountStatus" class="font-semibold text-center py-2 rounded-md">
+                    Plano Atual: <strong id="plan-type">Grátis</strong>
+                    <p class="text-xs text-muted">Dias no Teste: <strong id="days-remaining">N/A</strong></p>
+                    <p class="text-xs text-muted">Fim Premium: <strong id="premium-end-date">N/A</strong></p>
+                </div>
+                <p class="text-xs text-center text-muted">ID Utilizador: <span id="userIdDisplay" class="font-mono"></span></p>
+             </div>
+             <div class="grid grid-cols-2 gap-3 mt-4">
+                <button id="startBotBtn" class="btn btn-primary !py-2.5">
+                    🚀 Iniciar
+                    <div id="startBotSpinner" class="spinner ml-2"></div>
+                </button>
+                <button id="stopBotBtn" class="btn btn-danger !py-2.5" disabled>
+                    🛑 Parar
+                    <div id="stopBotSpinner" class="spinner ml-2"></div>
+                </button>
+             </div>
+          </div>
+          
+          <div class="card">
+              <h2 class="text-xl font-bold text-heading mb-4">Estatísticas</h2>
+              <div class="space-y-3">
+                  <div class="flex justify-between items-baseline p-3 rounded-lg bg-[var(--color-bg)]">
+                      <span class="text-sm font-medium text-muted">Vitórias</span>
+                      <span id="winCount" class="text-2xl font-bold text-[var(--color-success)]">0</span>
+                  </div>
+                  <div class="flex justify-between items-baseline p-3 rounded-lg bg-[var(--color-bg)]">
+                      <span class="text-sm font-medium text-muted">Derrotas</span>
+                      <span id="lossCount" class="text-2xl font-bold text-[var(--color-danger)]">0</span>
+                  </div>
+                  <div class="flex justify-between items-baseline p-3 rounded-lg bg-[var(--color-bg)]">
+                      <span class="text-sm font-medium text-muted">Lucro/Prejuízo Total</span>
+                      <span id="totalProfitLoss" class="text-2xl font-bold text-[var(--color-primary)]">0.00 USD</span>
+                  </div>
+                  <div class="flex justify-between items-baseline p-3 rounded-lg bg-[var(--color-bg)]">
+                      <span class="text-sm font-medium text-muted">Saldo da Deriv</span>
+                      <span id="deriv-balance" class="text-2xl font-bold text-green-600 dark:text-green-400">0.00 USD</span>
+                  </div>
+              </div>
+          </div>
+
+          <div class="card">
+            <h2 class="text-xl font-bold text-heading mb-4">Log do Bot</h2>
+            <div id="botLog" class="bg-[var(--color-bg)] h-96 overflow-y-auto p-3 rounded-lg">
+              <div class="log-entry log-info">Bem-vindo ao KingBot! Aguardando ações.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+           <form id="settingsForm" class="space-y-6">
+              <div class="card">
+                  <h2 class="text-xl font-bold text-heading mb-4">Configurações Gerais</h2>
+                  <div class="space-y-4">
+                      <div>
+                          <label for="derivToken" class="block text-sm font-medium text-muted">Token Deriv API:</label>
+                          <input type="password" id="derivToken" name="deriv_token" class="mt-1 input-field" placeholder="O seu token API (ex: sk_...)" required>
+                      </div>
+                      <div>
+                        <label for="strategyLogic" class="block text-sm font-medium text-muted">Lógica da Estratégia:</label>
+                        <select id="strategyLogic" name="logica_estrategia" class="mt-1 input-field">
+                          <option value="OR">OR (Qualquer estratégia pode dar o sinal)</option>
+                          <option value="AND">AND (Todas as estratégias devem concordar)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label for="candleGranularity" class="block text-sm font-medium text-muted">Granularidade da Vela:</label>
+                        <select id="candleGranularity" name="candle_granularity" required class="mt-1 input-field">
+                            <option value="60">1 Minuto (60s)</option>
+                            <option value="120">2 Minutos (120s)</option>
+                            <option value="180">3 Minutos (180s)</option>
+                            <option value="300">5 Minutos (300s)</option>
+                            <option value="600">10 Minutos (600s)</option>
+                            <option value="900">15 Minutos (900s)</option>
+                            <option value="1800">30 Minutos (1800s)</option>
+                            <option value="3600">1 Hora (3600s)</option>
+                        </select>
+                      </div>
+                  </div>
+              </div>
+              
+              <div class="card">
+                  <h2 class="text-xl font-bold text-heading mb-4">Parâmetros do Contrato</h2>
+                  
+                  <div class="space-y-4">
+                      <div>
+                          <label for="contractType" class="block text-sm font-medium text-muted">Tipo de Contrato:</label>
+                          <select id="contractType" name="contract_type_to_trade" class="mt-1 input-field">
+                              <option value="CALLPUT">CALL/PUT</option>
+                              <option value="ACCUMULATOR">ACCUMULATOR</option>
+                              <option value="MULTIPLIER">MULTIPLIER</option>
+                          </select>
+                      </div>
+                      <div>
+                          <label for="stake" class="block text-sm font-medium text-muted">Valor da Entrada (Stake $):</label>
+                          <input type="number" id="stake" name="stake" step="0.01" min="0.35" required class="mt-1 input-field">
+                      </div>
+                  </div>
+                  
+                  <div class="mt-6 pt-6 border-t border-[var(--color-border)]">
+                      <div id="callPutSettings" class="space-y-4">
+                          <h3 class="font-semibold text-lg text-heading">CALL/PUT</h3>
+                          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label for="duration" class="block text-sm font-medium text-muted">Duração (segundos):</label>
+                              <input type="number" id="duration" name="duration" min="5" required class="mt-1 input-field">
+                            </div>
+                            <div>
+                              <label for="takeProfit" class="block text-sm font-medium text-muted">Take Profit (vitórias):</label>
+                              <input type="number" id="takeProfit" name="take_profit" min="1" class="mt-1 input-field">
+                            </div>
+                            <div>
+                              <label for="stopLoss" class="block text-sm font-medium text-muted">Stop Loss (derrotas):</label>
+                              <input type="number" id="stopLoss" name="stop_loss" min="1" class="mt-1 input-field">
+                            </div>
+                          </div>
+                      </div>
+
+                      <div id="accumulatorSettings" class="hidden space-y-4">
+                          <h3 class="font-semibold text-lg text-heading">ACCUMULATOR</h3>
+                           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label for="accumulatorGrowthRate" class="block text-sm font-medium text-muted">Taxa de Crescimento (ex: 0.02 para 2%):</label>
+                              <input type="number" id="accumulatorGrowthRate" name="accumulator_growth_rate" step="0.01" min="0.01" max="0.05" required class="mt-1 input-field">
+                            </div>
+                             <div>
+                              <label for="tpAccumulator" class="block text-sm font-medium text-muted">Take Profit ($):</label>
+                              <input type="number" id="tpAccumulator" name="take_profit_accumulator" step="0.01" min="0.01" class="mt-1 input-field">
+                            </div>
+                           </div>
+                           <div class="space-y-2 pt-2">
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox" id="useDynamicSL" name="use_dynamic_sl" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                    <label for="useDynamicSL" class="font-medium text-sm text-heading">Usar Stop Loss Dinâmico (ATR)</label>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
+                                    <div>
+                                        <label for="slAccumulator" class="block text-xs font-medium text-muted">Stop Loss Fixo ($):</label>
+                                        <input type="number" id="slAccumulator" name="stop_loss_accumulator" step="0.01" min="0.01" class="mt-1 input-field">
+                                    </div>
+                                    <div>
+                                        <label for="atrMultiplier" class="block text-xs font-medium text-muted">Multiplicador ATR:</label>
+                                        <input type="number" id="atrMultiplier" name="atr_multiplier_for_sl" step="0.1" value="2.0" class="mt-1 input-field" disabled>
+                                    </div>
+                                    <div>
+                                        <label for="atrWindow" class="block text-xs font-medium text-muted">Janela ATR:</label>
+                                        <input type="number" id="atrWindow" name="atr_window" min="1" placeholder="14" class="mt-1 input-field" disabled>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-muted pl-7">Quando ativado, o Stop Loss será definido como 'Multiplicador ATR' x Volatilidade Atual.</p>
+                           </div>
+                      </div>
+
+                       <div id="multiplierSettings" class="hidden space-y-4">
+                           <h3 class="font-semibold text-lg text-heading">MULTIPLIER</h3>
+                           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label for="multiplierValue" class="block text-sm font-medium text-muted">Multiplicador (x):</label>
+                                <input type="number" id="multiplierValue" name="multiplier_value" min="2" required class="mt-1 input-field">
+                              </div>
+                              <div>
+                                <label for="tpMultiplier" class="block text-sm font-medium text-muted">Take Profit ($):</label>
+                                <input type="number" id="tpMultiplier" name="take_profit_multiplier" step="0.01" min="0.01" class="mt-1 input-field">
+                              </div>
+                              <div>
+                                <label for="slMultiplier" class="block text-sm font-medium text-muted">Stop Loss ($):</label>
+                                <input type="number" id="slMultiplier" name="stop_loss_multiplier" step="0.01" min="0.01" class="mt-1 input-field">
+                              </div>
+                           </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="card">
+                  <h2 class="text-xl font-bold text-heading mb-4">Estratégias de Análise</h2>
+                  <div id="strategiesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div class="strategy-group" id="groupRSI">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableRSI" name="strategies_enabled" value="rsi" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableRSI" class="font-semibold text-heading">RSI</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                              <div>
+                                <label for="rsiPeriod" class="block text-xs font-medium text-muted">Período:</label>
+                                <input type="number" id="rsiPeriod" name="rsi_period" min="1" placeholder="14" class="input-field">
+                              </div>
+                              <div class="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label for="rsiOverbought" class="block text-xs font-medium text-muted">Sobrecompra:</label>
+                                    <input type="number" id="rsiOverbought" name="rsi_overbought" min="50" max="100" placeholder="70" class="input-field">
+                                  </div>
+                                  <div>
+                                    <label for="rsiOversold" class="block text-xs font-medium text-muted">Sobrevenda:</label>
+                                    <input type="number" id="rsiOversold" name="rsi_oversold" min="0" max="50" placeholder="30" class="input-field">
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="strategy-group" id="groupBollinger">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableBollinger" name="strategies_enabled" value="bollinger" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableBollinger" class="font-semibold text-heading">Bandas de Bollinger</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label for="bollingerPeriod" class="block text-xs font-medium text-muted">Período:</label>
+                                  <input type="number" id="bollingerPeriod" name="bollinger_period" min="5" placeholder="20" class="input-field">
+                                </div>
+                                <div>
+                                  <label for="bollingerDev" class="block text-xs font-medium text-muted">Desvio:</label>
+                                  <input type="number" id="bollingerDev" name="bollinger_dev" step="0.1" placeholder="2.0" class="input-field">
+                                </div>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="strategy-group" id="groupMA">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableMA" name="strategies_enabled" value="moving_average" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableMA" class="font-semibold text-heading">Média Móvel</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                              <div>
+                                  <label for="maWindow" class="block text-xs font-medium text-muted">Janela:</label>
+                                  <input type="number" id="maWindow" name="ma_window" min="5" placeholder="20" class="input-field">
+                              </div>
+                          </div>
+                      </div>
+                       <div class="strategy-group" id="groupADX">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableADX" name="strategies_enabled" value="adx" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableADX" class="font-semibold text-heading">ADX</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                              <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label for="adxPeriod" class="block text-xs font-medium text-muted">Período:</label>
+                                  <input type="number" id="adxPeriod" name="adx_period" min="5" placeholder="14" class="input-field">
+                                </div>
+                                <div>
+                                  <label for="adxThreshold" class="block text-xs font-medium text-muted">Limiar de Força:</label>
+                                  <input type="number" id="adxThreshold" name="adx_threshold" min="0" max="100" placeholder="25" class="input-field">
+                                </div>
+                              </div>
+                          </div>
+                      </div>
+                       <div class="strategy-group" id="groupVolume">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableVolume" name="strategies_enabled" value="volume" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableVolume" class="font-semibold text-heading">Pico de Volume</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                              <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label for="volumeFactor" class="block text-xs font-medium text-muted">Fator:</label>
+                                  <input type="number" id="volumeFactor" name="volume_factor" step="0.1" placeholder="1.5" class="input-field">
+                                </div>
+                                <div>
+                                  <label for="volumeHistoryPeriods" class="block text-xs font-medium text-muted">Períodos Hist.:</label>
+                                  <input type="number" id="volumeHistoryPeriods" name="volume_history_periods" min="10" placeholder="20" class="input-field">
+                                </div>
+                              </div>
+                          </div>
+                      </div>
+                       <div class="strategy-group" id="groupCandlePatterns">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableCandlePatterns" name="strategies_enabled" value="padroes_vela" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableCandlePatterns" class="font-semibold text-heading">Engolfo (Vela)</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden">
+                              <p class="text-sm text-muted">Detecta padrão de vela de Engolfo de Alta/Baixa.</p>
+                          </div>
+                      </div>
+                       <div class="strategy-group" id="groupReconhecimento">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableReconhecimento" name="strategies_enabled" value="reconhecimento" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableReconhecimento" class="font-semibold text-heading">Estrela Manhã/Tarde</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden">
+                               <p class="text-sm text-muted">Detecta padrões de reversão de 3 velas.</p>
+                          </div>
+                      </div>
+                      <div class="strategy-group" id="groupFibonacci">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableFibonacci" name="strategies_enabled" value="fibonacci" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableFibonacci" class="font-semibold text-heading">Retração Fibonacci</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                             <div>
+                                  <label for="fibPeriod" class="block text-xs font-medium text-muted">Período Swing:</label>
+                                  <input type="number" id="fibPeriod" name="fib_period" min="10" placeholder="50" class="input-field">
+                              </div>
+                          </div>
+                      </div>
+                      <div class="strategy-group" id="groupVWAP">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableVWAP" name="strategies_enabled" value="vwap" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableVWAP" class="font-semibold text-heading">VWAP</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                             <div>
+                                  <label for="vwapWindow" class="block text-xs font-medium text-muted">Janela:</label>
+                                  <input type="number" id="vwapWindow" name="vwap_window" min="1" placeholder="14" class="input-field">
+                              </div>
+                          </div>
+                      </div>
+                      <div class="strategy-group" id="groupMACD">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableMACD" name="strategies_enabled" value="macd_histogram" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableMACD" class="font-semibold text-heading">MACD Histograma</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                             <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                  <label for="macdFast" class="block text-xs font-medium text-muted">Rápida:</label>
+                                  <input type="number" id="macdFast" name="macd_fast" placeholder="12" class="input-field">
+                                </div>
+                                <div>
+                                  <label for="macdSlow" class="block text-xs font-medium text-muted">Lenta:</label>
+                                  <input type="number" id="macdSlow" name="macd_slow" placeholder="26" class="input-field">
+                                </div>
+                                <div>
+                                  <label for="macdSign" class="block text-xs font-medium text-muted">Sinal:</label>
+                                  <input type="number" id="macdSign" name="macd_sign" placeholder="9" class="input-field">
+                                </div>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="strategy-group" id="groupWilliamsR">
+                          <div class="strategy-group-header">
+                              <div class="flex items-center space-x-3">
+                                  <input type="checkbox" id="enableWilliamsR" name="strategies_enabled" value="williams_r" class="h-4 w-4 rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)]">
+                                  <label for="enableWilliamsR" class="font-semibold text-heading">Williams %R</label>
+                              </div>
+                              <span class="text-muted text-xl">▼</span>
+                          </div>
+                          <div class="strategy-group-content hidden space-y-3">
+                              <div>
+                                <label for="williamsPeriod" class="block text-xs font-medium text-muted">Período:</label>
+                                <input type="number" id="williamsPeriod" name="williams_period" min="1" placeholder="14" class="input-field">
+                              </div>
+                              <div class="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label for="williamsOverbought" class="block text-xs font-medium text-muted">Sobrecompra:</label>
+                                    <input type="number" id="williamsOverbought" name="williams_overbought" min="-50" max="0" placeholder="-20" class="input-field">
+                                  </div>
+                                  <div>
+                                    <label for="williamsOversold" class="block text-xs font-medium text-muted">Sobrevenda:</label>
+                                    <input type="number" id="williamsOversold" name="williams_oversold" min="-100" max="-50" placeholder="-80" class="input-field">
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                  </div>
+              </div>
+
+              <!-- Nova Seção: Central de Ajuda/FAQ Interativa -->
+              <div class="card">
+                <h2 class="text-xl font-bold text-heading mb-4">Central de Ajuda / FAQ</h2>
+                <input type="text" id="faqSearchInput" class="input-field mb-4" placeholder="Pesquisar perguntas frequentes...">
+                
+                <div id="faqList" class="space-y-3">
+                    <!-- Exemplo de item de FAQ -->
+                    <div class="strategy-group faq-item">
+                        <div class="strategy-group-header">
+                            <span class="font-semibold text-heading faq-question">O que é o KingBot?</span>
+                            <span class="text-muted text-xl">▼</span>
+                        </div>
+                        <div class="strategy-group-content hidden">
+                            <p class="text-sm text-muted faq-answer">O KingBot é um robô de trading automatizado que se conecta à plataforma Deriv.com e toma decisões com base em estratégias técnicas configuráveis. Ideal para automatizar operações com controle de risco.</p>
+                        </div>
+                    </div>
+                    <!-- Mais itens de FAQ podem ser adicionados aqui -->
+                    <div class="strategy-group faq-item">
+                        <div class="strategy-group-header">
+                            <span class="font-semibold text-heading faq-question">Como conecto o KingBot à minha conta Deriv?</span>
+                            <span class="text-muted text-xl">▼</span>
+                        </div>
+                        <div class="strategy-group-content hidden">
+                            <p class="text-sm text-muted faq-answer">Você precisa gerar um Token API na sua conta Deriv.com (vá em 'Configurações' > 'Tokens de API') e colá-lo no campo 'Token Deriv API' nas configurações gerais do KingBot.</p>
+                        </div>
+                    </div>
+                    <div class="strategy-group faq-item">
+                        <div class="strategy-group-header">
+                            <span class="font-semibold text-heading faq-question">Posso usar várias estratégias ao mesmo tempo?</span>
+                            <span class="text-muted text-xl">▼</span>
+                        </div>
+                        <div class="strategy-group-content hidden">
+                            <p class="text-sm text-muted faq-answer">Sim, você pode ativar múltiplas estratégias e definir a lógica entre elas como 'AND' (todas devem concordar) ou 'OR' (qualquer uma pode dar o sinal).</p>
+                        </div>
+                    </div>
+                    <div class="strategy-group faq-item">
+                        <div class="strategy-group-header">
+                            <span class="font-semibold text-heading faq-question">O bot funciona sem estar ligado ao navegador?</span>
+                            <span class="text-muted text-xl">▼</span>
+                        </div>
+                        <div class="strategy-group-content hidden">
+                            <p class="text-sm text-muted faq-answer">Não. Para o bot funcionar, esta página deve estar aberta no seu navegador e conectada ao servidor.</p>
+                        </div>
+                    </div>
+                    <div class="strategy-group faq-item">
+                        <div class="strategy-group-header">
+                            <span class="font-semibold text-heading faq-question">O que acontece se o meu período de teste terminar?</span>
+                            <span class="text-muted text-xl">▼</span>
+                        </div>
+                        <div class="strategy-group-content hidden">
+                            <p class="text-sm text-muted faq-answer">Após o término do período de teste, o bot interromperá as operações. Você terá a opção de subscrever um plano Premium para continuar usando o KingBot.</p>
+                        </div>
+                    </div>
+                </div>
+              </div>
+              
+              <div>
+                  <button type="submit" class="btn btn-primary w-full !py-3 !text-base">
+                      Salvar Configurações
+                      <div id="settingsSpinner" class="spinner ml-2"></div>
+                  </button>
+              </div>
+           </form>
+        </div>
+      </main>
+    </div>
+  </div>
+
+ <script>
+    // === UI Elements ===
+    const ui = {
+      // Auth
+      authSection: document.getElementById('auth-section'),
+      loginCard: document.getElementById('loginCard'),
+      registerCard: document.getElementById('registerCard'),
+      loginForm: document.getElementById('loginForm'),
+      registerForm: document.getElementById('registerForm'),
+      showRegisterBtn: document.getElementById('showRegisterBtn'),
+      showLoginBtn: document.getElementById('showLoginBtn'),
+      loginSpinner: document.getElementById('loginSpinner'),
+      registerSpinner: document.getElementById('registerSpinner'),
+      
+      // Dashboard
+      dashboardSection: document.getElementById('dashboard-section'),
+      usernameDisplay: document.getElementById('usernameDisplay'),
+      userIdDisplay: document.getElementById('userIdDisplay'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      themeToggleBtn: document.getElementById('themeToggleBtn'),
+
+      // Bot Control & Stats
+      startBotBtn: document.getElementById('startBotBtn'),
+      stopBotBtn: document.getElementById('stopBotBtn'),
+      startBotSpinner: document.getElementById('startBotSpinner'),
+      stopBotSpinner: document.getElementById('stopBotSpinner'),
+      botStatus: document.getElementById('botStatus'),
+      accountStatus: document.getElementById('accountStatus'),
+      planType: document.getElementById('plan-type'),
+      daysRemaining: document.getElementById('days-remaining'),
+      premiumEndDate: document.getElementById('premium-end-date'),
+      derivBalance: document.getElementById('deriv-balance'),
+      winCount: document.getElementById('winCount'),
+      lossCount: document.getElementById('lossCount'),
+      totalProfitLoss: document.getElementById('totalProfitLoss'),
+      botLog: document.getElementById('botLog'),
+      
+      // Settings
+      settingsForm: document.getElementById('settingsForm'),
+      settingsSpinner: document.getElementById('settingsSpinner'),
+      derivToken: document.getElementById('derivToken'),
+      
+      // General Contract fields
+      stake: document.getElementById('stake'),
+      
+      // CALL/PUT fields
+      duration: document.getElementById('duration'),
+      takeProfit: document.getElementById('takeProfit'),
+      stopLoss: document.getElementById('stopLoss'),
+      candleGranularity: document.getElementById('candleGranularity'),
+      strategyLogic: document.getElementById('strategyLogic'),
+
+      // Contract Type Selector
+      contractType: document.getElementById('contractType'),
+      callPutSettings: document.getElementById('callPutSettings'),
+      accumulatorSettings: document.getElementById('accumulatorSettings'),
+      multiplierSettings: document.getElementById('multiplierSettings'),
+
+      // ACCUMULATOR fields
+      accumulatorGrowthRate: document.getElementById('accumulatorGrowthRate'),
+      tpAccumulator: document.getElementById('tpAccumulator'),
+      slAccumulator: document.getElementById('slAccumulator'),
+      useDynamicSL: document.getElementById('useDynamicSL'),
+      atrMultiplier: document.getElementById('atrMultiplier'),
+      atrWindow: document.getElementById('atrWindow'),
+
+      // MULTIPLIER fields
+      multiplierValue: document.getElementById('multiplierValue'),
+      tpMultiplier: document.getElementById('tpMultiplier'),
+      slMultiplier: document.getElementById('slMultiplier'),
+
+      // Strategies container
+      strategiesContainer: document.getElementById('strategiesContainer'),
+
+      // Notification specific UI
+      notificationContainer: document.getElementById('notification-container'),
+
+      // FAQ specific UI
+      faqSearchInput: document.getElementById('faqSearchInput'),
+      faqList: document.getElementById('faqList'),
+      faqItems: document.querySelectorAll('.faq-item'),
+    };
+
+    // === Global State ===
+    let socket = null;
+
+    // === Utility Functions ===
+    function showLoading(show, spinnerElement, buttonElement) {
+        if (spinnerElement) spinnerElement.classList.toggle('spinner-active', show);
+        if (buttonElement) buttonElement.disabled = show;
+    }
+
+    function showNotification(message, type = 'info', duration = 5000) {
+        const notificationItem = document.createElement('div');
+        notificationItem.classList.add('notification-item', `notification-${type}`);
+        notificationItem.innerHTML = `<span>${message}</span><button class="notification-close-btn">&times;</button>`;
+        ui.notificationContainer.appendChild(notificationItem);
+        const timeoutId = setTimeout(() => {
+            notificationItem.classList.add('dismiss');
+            notificationItem.addEventListener('animationend', () => notificationItem.remove());
+        }, duration);
+        notificationItem.querySelector('.notification-close-btn').addEventListener('click', () => {
+            clearTimeout(timeoutId);
+            notificationItem.classList.add('dismiss');
+            notificationItem.addEventListener('animationend', () => notificationItem.remove());
+        });
+    }
+
+    function log(message, type = 'info') {
+      const logEntry = document.createElement('div');
+      logEntry.classList.add('log-entry', `log-${type}`);
+      logEntry.innerHTML = `<span class="font-semibold">[${new Date().toLocaleTimeString()}]</span> ${message}`;
+      ui.botLog.prepend(logEntry);
+      if (ui.botLog.children.length > 150) {
+        ui.botLog.removeChild(ui.botLog.lastChild);
+      }
+    }
+
+    function toggleAuthUI(showLogin) {
+      ui.authSection.classList.toggle('hidden', !showLogin);
+      ui.dashboardSection.classList.toggle('hidden', showLogin);
+    }
+    
+    function updateBotStatusUI(isRunning) {
+        ui.botStatus.textContent = isRunning ? 'Rodando' : 'Parado';
+        const runningClasses = ['bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200'];
+        const stoppedClasses = ['bg-red-100', 'text-red-800', 'dark:bg-red-900', 'dark:text-red-200'];
+        ui.botStatus.classList.remove(...runningClasses, ...stoppedClasses);
+        ui.botStatus.classList.add(...(isRunning ? runningClasses : stoppedClasses));
+        ui.startBotBtn.disabled = isRunning;
+        ui.stopBotBtn.disabled = !isRunning;
+    }
+
+    function manageContractTypeUI(contractType) {
+        ui.callPutSettings.classList.toggle('hidden', contractType !== 'CALLPUT');
+        ui.accumulatorSettings.classList.toggle('hidden', contractType !== 'ACCUMULATOR');
+        ui.multiplierSettings.classList.toggle('hidden', contractType !== 'MULTIPLIER');
+    }
+
+    function populateSettingsForm(settings) {
+        // ... (A sua função populateSettingsForm estava boa, pode mantê-la como está)
+        // Apenas para garantir, aqui está uma versão limpa:
+        ui.derivToken.value = settings.deriv_token || '';
+        ui.stake.value = settings.stake ?? 1.0;
+        ui.duration.value = settings.duration ?? 60;
+        ui.takeProfit.value = settings.take_profit ?? '';
+        ui.stopLoss.value = settings.stop_loss ?? '';
+        ui.candleGranularity.value = settings.candle_granularity ?? 60;
+        ui.strategyLogic.value = settings.logica_estrategia || 'OR';
+        
+        const contractType = settings.contract_type_to_trade || 'CALLPUT';
+        ui.contractType.value = contractType;
+        manageContractTypeUI(contractType);
+
+        // Accumulator
+        ui.accumulatorGrowthRate.value = settings.accumulator_growth_rate ?? 0.02;
+        ui.tpAccumulator.value = settings.take_profit_accumulator ?? '';
+        
+        const estrategiasConfig = settings.estrategias_config_json || {};
+        ui.useDynamicSL.checked = estrategiasConfig.use_dynamic_sl || false;
+        ui.slAccumulator.value = settings.stop_loss_accumulator ?? '';
+        ui.atrMultiplier.value = estrategiasConfig.atr_multiplier_for_sl ?? 2.0;
+        ui.atrWindow.value = estrategiasConfig.atr_window ?? 14; 
+        
+        ui.slAccumulator.disabled = ui.useDynamicSL.checked;
+        ui.atrMultiplier.disabled = !ui.useDynamicSL.checked;
+        ui.atrWindow.disabled = !ui.useDynamicSL.checked; 
+
+        // Multiplier
+        ui.multiplierValue.value = settings.multiplier_value ?? 100;
+        ui.tpMultiplier.value = settings.take_profit_multiplier ?? '';
+        ui.slMultiplier.value = settings.stop_loss_multiplier ?? '';
+
+        // Strategies
+        document.querySelectorAll('input[name="strategies_enabled"]').forEach(cb => cb.checked = false);
+        (estrategiasConfig.strategies_enabled || []).forEach(strategy => {
+            const checkbox = document.querySelector(`input[value="${strategy}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+        
+        const fields = {
+            rsiPeriod: 'rsi_period', rsiOverbought: 'rsi_overbought', rsiOversold: 'rsi_oversold',
+            bollingerPeriod: 'bollinger_period', bollingerDev: 'bollinger_dev', maWindow: 'ma_window',
+            adxPeriod: 'adx_period', adxThreshold: 'adx_threshold', volumeFactor: 'volume_factor',
+            volumeHistoryPeriods: 'volume_history_periods', fibPeriod: 'fib_period', vwapWindow: 'vwap_window',
+            macdFast: 'macd_fast', macdSlow: 'macd_slow', macdSign: 'macd_sign', williamsPeriod: 'williams_period',
+            williamsOverbought: 'williams_overbought', williamsOversold: 'williams_oversold'
+        };
+        for(const [elementId, configKey] of Object.entries(fields)) {
+            if (ui[elementId]) {
+                 ui[elementId].value = estrategiasConfig[configKey] ?? ui[elementId].placeholder ?? '';
+            }
+        }
+    }
+    
+    function safeParse(value, isFloat = false) {
+        if (value === null || value === undefined || value === '') return null;
+        const number = isFloat ? parseFloat(value) : parseInt(value, 10);
+        return isNaN(number) ? null : number;
+    }
+  
+    function removeNulls(obj) {
+        Object.keys(obj).forEach(key => {
+            if (obj[key] && typeof obj[key] === 'object') removeNulls(obj[key]);
+            else if (obj[key] === null || obj[key] === undefined) delete obj[key];
+        });
+        return obj;
+    }
+
+    function collectSettingsFromUI() {
+        // ... (A sua função collectSettingsFromUI também estava boa, pode mantê-la)
+        const estrategiasConfig = {
+            strategies_enabled: Array.from(document.querySelectorAll('input[name="strategies_enabled"]:checked')).map(cb => cb.value),
+            use_dynamic_sl: ui.useDynamicSL.checked,
+            atr_multiplier_for_sl: safeParse(ui.atrMultiplier.value, true),
+            atr_window: safeParse(ui.atrWindow.value), 
+            rsi_period: safeParse(document.getElementById('rsiPeriod').value),
+            rsi_overbought: safeParse(document.getElementById('rsiOverbought').value),
+            rsi_oversold: safeParse(document.getElementById('rsiOversold').value),
+            bollinger_period: safeParse(document.getElementById('bollingerPeriod').value),
+            bollinger_dev: safeParse(document.getElementById('bollingerDev').value, true),
+            ma_window: safeParse(document.getElementById('maWindow').value),
+            adx_period: safeParse(document.getElementById('adxPeriod').value),
+            adx_threshold: safeParse(document.getElementById('adxThreshold').value), 
+            volume_factor: safeParse(document.getElementById('volumeFactor').value, true),
+            volume_history_periods: safeParse(document.getElementById('volumeHistoryPeriods').value), 
+            fib_period: safeParse(document.getElementById('fibPeriod').value),
+            vwap_window: safeParse(document.getElementById('vwapWindow').value),
+            macd_fast: safeParse(document.getElementById('macdFast').value),
+            macd_slow: safeParse(document.getElementById('macdSlow').value),
+            macd_sign: safeParse(document.getElementById('macdSign').value),
+            williams_period: safeParse(document.getElementById('williamsPeriod').value),
+            williams_overbought: safeParse(document.getElementById('williamsOverbought').value),
+            williams_oversold: safeParse(document.getElementById('williamsOversold').value),
+        };
+
+        const settings = {
+            deriv_token: ui.derivToken.value || null,
+            stake: safeParse(ui.stake.value, true),
+            duration: safeParse(ui.duration.value),
+            take_profit: safeParse(ui.takeProfit.value), 
+            stop_loss: safeParse(ui.stopLoss.value),     
+            candle_granularity: safeParse(ui.candleGranularity.value),
+            logica_estrategia: ui.strategyLogic.value,
+            contract_type_to_trade: ui.contractType.value,
+            accumulator_growth_rate: safeParse(ui.accumulatorGrowthRate.value, true),
+            take_profit_accumulator: safeParse(ui.tpAccumulator.value, true),
+            stop_loss_accumulator: ui.useDynamicSL.checked ? null : safeParse(ui.slAccumulator.value, true),
+            multiplier_value: safeParse(ui.multiplierValue.value),
+            take_profit_multiplier: safeParse(ui.tpMultiplier.value, true),
+            stop_loss_multiplier: safeParse(ui.slMultiplier.value, true),
+            estrategias_config_json: removeNulls(estrategiasConfig)
+        };
+        return removeNulls(settings);
+    }
+
+    // --- API & Authentication ---
+    const api = {
+      baseUrl: window.location.origin,
+      async request(endpoint, options = {}) {
+        const token = localStorage.getItem('access_token');
+        const headers = { 'Content-Type': 'application/json', ...options.headers };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const response = await fetch(`${api.baseUrl}${endpoint}`, { ...options, headers });
+        let data;
+        try { data = await response.json(); } 
+        catch (e) { data = { message: response.statusText || "Operação concluída." }; }
+
+        if (!response.ok) {
+          let errorDetail = data.detail || data.message || "Erro desconhecido.";
+          if(Array.isArray(errorDetail)) {
+              errorDetail = errorDetail.map(err => `${err.loc.join('->')}: ${err.msg}`).join('; ');
+          }
+          throw new Error(`Erro ${response.status}: ${errorDetail}`);
+        }
+        return data;
+      },
+    };
+    
+    function updateDashboardStats(userData) {
+        ui.usernameDisplay.textContent = userData.username;
+        ui.userIdDisplay.textContent = userData.id;
+        // ... (A sua função updateDashboardStats pode ser mantida como está)
+    }
+
+    async function fetchAndApplyUserSettings() {
+        try {
+            const userSettings = await api.request('/api/user/me');
+            updateDashboardStats(userSettings);
+            populateSettingsForm(userSettings);
+            toggleAuthUI(false);
+            return true;
+        } catch (error) {
+            log(`Sessão inválida. Por favor, faça login.`, 'error');
+            return false;
+        }
+    }
+    
+    function resetStatsUI() {
+        ui.winCount.textContent = '0';
+        ui.lossCount.textContent = '0';
+        ui.totalProfitLoss.textContent = '0.00 USD';
+        ui.derivBalance.textContent = '0.00 USD';
+        ui.botLog.innerHTML = `<div class="log-entry log-info">Bem-vindo ao KingBot! Aguardando ações.</div>`;
+    }
+
+    async function initializeUserSession() {
+        const success = await fetchAndApplyUserSettings();
+        if (success) {
+            setupSocket(); 
+        } else {
+            logoutUser();
+        }
+    }
+
+    function logoutUser() {
+      localStorage.removeItem('access_token');
+      if (socket) {
+        socket.disconnect();
+        socket = null;
+      }
+      log("Sessão encerrada.", 'info');
+      toggleAuthUI(true);
+      updateBotStatusUI(false); 
+      resetStatsUI();
+      showNotification('Você saiu da sua conta.', 'info');
+    }
+
+    // --- Socket.IO Setup ---
+    function setupSocket() {
+      const token = localStorage.getItem('access_token');
+      if (!token || socket) return; 
+      
+      socket = io(api.baseUrl, { transports: ['websocket'] });
+
+      socket.on('connect', () => {
+          log('Conectado ao servidor de mensagens.', 'success');
+          socket.emit('join_user_room', { token: token });
+      });
+
+      socket.on('disconnect', () => log('Desconectado do servidor de mensagens.', 'warning'));
+
+      socket.on('bot_log', (data) => log(data.message, data.level)); 
+      
+      socket.on('bot_status_update', (status) => {
+          updateBotStatusUI(status.running);
+          if(status.running) {
+              showNotification('O bot foi iniciado com sucesso.', 'success');
+          } else {
+              showNotification('O bot foi parado.', 'info');
+          }
+      });
+      
+      // Listener ATIVADO para atualizar as estatísticas
+      socket.on('trade_update', (data) => {
+          ui.winCount.textContent = data.win_count;
+          ui.lossCount.textContent = data.loss_count;
+          ui.totalProfitLoss.textContent = `${data.total_profit_loss} USD`;
+          if (data.balance_after) { // Atualiza o saldo se o backend enviar
+             ui.derivBalance.textContent = `${parseFloat(data.balance_after).toFixed(2)} USD`;
+          }
+          const profit = parseFloat(data.total_profit_loss);
+          const lastProfit = parseFloat(ui.totalProfitLoss.dataset.lastProfit || 0);
+          const tradeResult = profit - lastProfit;
+          ui.totalProfitLoss.dataset.lastProfit = profit;
+
+          if(tradeResult >= 0) {
+             showNotification(`Vitória! Lucro: ${tradeResult.toFixed(2)} USD`, 'success');
+          } else {
+             showNotification(`Derrota! Prejuízo: ${Math.abs(tradeResult).toFixed(2)} USD`, 'error');
+          }
+      });
+      
+      // Listener para atualizar o saldo inicial
+      socket.on('account_info', (data) => {
+          if (data && data.balance) {
+              ui.derivBalance.textContent = `${parseFloat(data.balance).toFixed(2)} USD`;
+          }
+      });
+
+      socket.on('auth_error', (data) => {
+        log(`Erro de autenticação de mensagens. A forçar logout.`, 'error');
+        showNotification('Erro de autenticação! Faça login novamente.', 'error');
+        logoutUser();
+      });
+    }
+
+    // --- Event Listeners ---
+    ui.showRegisterBtn.addEventListener('click', () => {
+      ui.loginCard.classList.add('hidden');
+      ui.registerCard.classList.remove('hidden');
+    });
+
+    ui.showLoginBtn.addEventListener('click', () => {
+      ui.registerCard.classList.add('hidden');
+      ui.loginCard.classList.remove('hidden');
+    });
+
+    ui.registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showLoading(true, ui.registerSpinner, e.target.querySelector('button'));
+        try {
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            const result = await api.request('/auth/register', { method: 'POST', body: JSON.stringify(data) });
+            showNotification(`Utilizador ${data.username} registado com sucesso!`, 'success');
+            ui.showLoginBtn.click();
+            e.target.reset();
+        } catch (error) {
+            showNotification(`Erro no registo: ${error.message}`, 'error');
+        } finally {
+            showLoading(false, ui.registerSpinner, e.target.querySelector('button'));
+        }
+    });
+
+    ui.loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showLoading(true, ui.loginSpinner, e.target.querySelector('button'));
+        try {
+            const formData = new FormData(e.target);
+            const body = new URLSearchParams(formData);
+            const loginData = await api.request('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+            localStorage.setItem('access_token', loginData.access_token);
+            showNotification('Login bem-sucedido! Bem-vindo.', 'success');
+            await initializeUserSession();
+        } catch (error) {
+            showNotification(`Erro no login: ${error.message}`, 'error');
+        } finally {
+            showLoading(false, ui.loginSpinner, e.target.querySelector('button'));
+        }
+    });
+
+    ui.settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showLoading(true, ui.settingsSpinner, e.target.querySelector('button[type="submit"]'));
+        try {
+            const settingsData = collectSettingsFromUI();
+            if (!settingsData.deriv_token) throw new Error("O Token Deriv API é obrigatório.");
+            const result = await api.request('/api/user/settings', { method: 'POST', body: JSON.stringify(settingsData) });
+            showNotification(result.message, 'success');
+        } catch (error) {
+            showNotification(`Erro ao salvar: ${error.message}`, 'error');
+        } finally {
+            showLoading(false, ui.settingsSpinner, e.target.querySelector('button[type="submit"]'));
+        }
+    });
+
+    ui.startBotBtn.addEventListener('click', async () => {
+        showLoading(true, ui.startBotSpinner, ui.startBotBtn);
+        try {
+            resetStatsUI(); // Limpa as estatísticas antes de iniciar
+            const settings = collectSettingsFromUI();
+            if (!settings.deriv_token) throw new Error("Insira o Token Deriv API nas configurações antes de iniciar.");
+            await api.request('/api/bot/start', { method: 'POST', body: JSON.stringify(settings) });
+            // A notificação de sucesso e atualização de status virá do socket
+        } catch (error) {
+            log(error.message, 'error');
+            showNotification(`Falha ao iniciar o bot: ${error.message}`, 'error');
+            showLoading(false, ui.startBotSpinner, ui.startBotBtn); // Garante que o spinner para em caso de erro
+        }
+    });
+
+    ui.stopBotBtn.addEventListener('click', async () => {
+        showLoading(true, ui.stopBotSpinner, ui.stopBotBtn);
+        try {
+            await api.request('/api/bot/stop', { method: 'POST' });
+            // A notificação de paragem e atualização de status virá do socket
+        } catch (error) {
+            log(error.message, 'error');
+            showNotification(`Falha ao parar o bot: ${error.message}`, 'error');
+            showLoading(false, ui.stopBotSpinner, ui.stopBotBtn); // Garante que o spinner para
+        }
+    });
+
+    ui.logoutBtn.addEventListener('click', logoutUser);
+    ui.contractType.addEventListener('change', (e) => manageContractTypeUI(e.target.value));
+    ui.useDynamicSL.addEventListener('change', (e) => {
+        ui.slAccumulator.disabled = e.target.checked; 
+        ui.atrMultiplier.disabled = !e.target.checked; 
+        ui.atrWindow.disabled = !e.target.checked; 
+    });
+    
+    document.querySelectorAll('.strategy-group-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.nextElementSibling;
+            const arrow = header.querySelector('span');
+            content.classList.toggle('hidden');
+            arrow.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+    });
+
+    ui.faqSearchInput.addEventListener('keyup', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        ui.faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question').textContent.toLowerCase();
+            const answer = item.querySelector('.faq-answer').textContent.toLowerCase();
+            item.style.display = (question.includes(searchTerm) || answer.includes(searchTerm)) ? 'block' : 'none';
+        });
+    });
+
+    // --- Inicialização --
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            ui.themeToggleBtn.textContent = '☀️';
+        } else {
+            ui.themeToggleBtn.textContent = '🌙';
+        }
+        ui.themeToggleBtn.addEventListener('click', () => { 
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            ui.themeToggleBtn.textContent = isDark ? '☀️' : '🌙';
+        });
+        
+        if (localStorage.getItem('access_token')) {
+            initializeUserSession();
+        } else {
+            toggleAuthUI(true);
+            updateBotStatusUI(false);
+        }
+    });
+  </script>
+</body>
+</html>

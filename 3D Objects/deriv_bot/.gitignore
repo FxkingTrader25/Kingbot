@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python/
+env/
+venv/
+.venv/
+*/bin/
+*/include/
+*/lib/
+*/lib64/
+*.egg-info/
+.coverage
+.pytest_cache/
+htmlcov/
+.mypy_cache/
+.tox/
+.gradle/
+.project
+.settings/
+.buildpath
+*.so
+*.ipynb_checkpoints
+
+# Base de Dados (se usar SQLite localmente)
+*.db
+*.sqlite3
+
+# Ficheiros de ambiente (onde estariam suas chaves locais)
+.env
+.flaskenv
+
+# Outros
+.DS_Store
+.vscode/ # Se usar VS Code e não quiser partilhar configurações
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+node_modules/
+dist/
+build/
+*.zip
+*.tar.gz

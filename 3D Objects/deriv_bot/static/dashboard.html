@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KingBot - Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        /* Base styles for light mode */
+        body {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .container {
+            background-color: #ffffff;
+        }
+        h1, h2, h3 {
+            color: #1f2937;
+        }
+        .card {
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .header-bg {
+            background-color: #3b82f6; /* Blue-500 */
+        }
+
+        /* Dark mode styles */
+        html.dark body {
+            background-color: #1a202c;
+            color: #d1d5db;
+        }
+        html.dark .container {
+            background-color: #2d3748;
+        }
+        html.dark h1, html.dark h2, html.dark h3 {
+            color: #e5e7eb;
+        }
+        html.dark .card {
+            background-color: #2d3748;
+            box-shadow: 0 4px 6px -1px rgba(255, 255, 255, 0.05), 0 2px 4px -1px rgba(255, 255, 255, 0.03);
+        }
+        html.dark .header-bg {
+            background-color: #2563eb; /* Darker blue */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="container mx-auto my-8 p-6 rounded-xl shadow-lg flex-grow">
+        <!-- Dashboard Header -->
+        <header class="flex justify-between items-center pb-6 mb-8 border-b border-gray-200 dark:border-gray-700 header-bg text-white -m-6 px-6 py-8 rounded-t-xl">
+            <h1 class="text-3xl md:text-4xl font-bold">Painel de Controlo do KingBot</h1>
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle-dashboard" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300">
+                    <span class="light-icon-dashboard">☀️</span>
+                    <span class="dark-icon-dashboard hidden">🌙</span>
+                </button>
+                <button onclick="location.href='lading.html';" class="bg-white text-blue-600 px-4 py-2 rounded-md font-semibold hover:bg-gray-100 transition duration-300 shadow-md">
+                    Sair
+                </button>
+            </div>
+        </header>
+
+        <!-- Welcome Message & Account Status -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Bem-vindo(a), <span id="username-display">Utilizador</span>!</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Estado da Conta</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Plano Atual: <strong id="plan-type">Premium (Teste)</strong></p>
+                    <p class="text-gray-600 dark:text-gray-400">Dias Restantes no Teste: <strong id="days-remaining">15 dias</strong></p>
+                    <p class="text-gray-600 dark:text-gray-400">Data de Fim do Premium: <strong id="premium-end-date">26/06/2025</strong></p>
+                </div>
+                <div class="card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Saldo da Deriv</h3>
+                    <p class="text-4xl font-bold text-green-600 dark:text-green-400">$<span id="deriv-balance">0.00</span> USD</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400"> (Dados em tempo real da sua conta Deriv)</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bot Control & Live Statistics -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Controlo do Bot e Estatísticas</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Estado do Bot</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">Status: <strong id="bot-status" class="text-red-500">Desligado</strong></p>
+                    <div class="flex space-x-4">
+                        <button id="start-bot-btn" class="bg-green-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-green-700 transition duration-300 shadow-md">
+                            Ligar Bot
+                        </button>
+                        <button id="stop-bot-btn" class="bg-red-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-red-700 transition duration-300 shadow-md">
+                            Desligar Bot
+                        </button>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Configurações Ativas:</h4>
+                        <ul class="list-disc pl-5 text-gray-600 dark:text-gray-400">
+                            <li>Estratégia: <span id="active-strategy">RSI + Bollinger (AND)</span></li>
+                            <li>Stake: $<span id="active-stake">1.00</span></li>
+                            <li>Duração: <span id="active-duration">60s</span></li>
+                        </ul>
+                        <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300 shadow-md">
+                            Gerir Estratégias
+                        </button>
+                    </div>
+                </div>
+                <div class="card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Resultados em Tempo Real</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Lucro Total: <span id="total-profit" class="font-bold text-green-500">$0.00</span></p>
+                    <p class="text-gray-600 dark:text-gray-400">Perda Total: <span id="total-loss" class="font-bold text-red-500">$0.00</span></p>
+                    <p class="text-gray-600 dark:text-gray-400">Operações Realizadas: <span id="total-trades" class="font-bold">0</span></p>
+                    <div class="mt-4 bg-gray-100 dark:bg-gray-700 p-4 rounded-md h-48 overflow-y-auto text-sm">
+                        <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Logs do Bot:</h4>
+                        <div id="bot-logs" class="text-gray-700 dark:text-gray-300">
+                            <!-- Live logs will appear here -->
+                            <p>[INFO] Aguardando para iniciar...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Historical Performance (Placeholder) -->
+        <section>
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Desempenho Histórico</h2>
+            <div class="card p-6 rounded-lg">
+                <p class="text-gray-600 dark:text-gray-400">Gráficos de desempenho e relatórios detalhados aparecerão aqui. (Futura implementação)</p>
+            </div>
+        </section>
+    </div>
+
+    <footer class="py-4 text-center text-gray-600 dark:text-gray-400 text-sm">
+        <p>&copy; 2025 KingBot. Todos os direitos reservados.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Theme Toggle Logic for Dashboard
+            const themeToggleBtnDashboard = document.getElementById('theme-toggle-dashboard');
+            const htmlElementDashboard = document.documentElement;
+
+            // Apply saved theme on load
+            const savedThemeDashboard = localStorage.getItem('theme') || 'light';
+            if (savedThemeDashboard === 'dark') {
+                htmlElementDashboard.classList.add('dark');
+                themeToggleBtnDashboard.querySelector('.light-icon-dashboard').classList.add('hidden');
+                themeToggleBtnDashboard.querySelector('.dark-icon-dashboard').classList.remove('hidden');
+            } else {
+                htmlElementDashboard.classList.remove('dark');
+                themeToggleBtnDashboard.querySelector('.light-icon-dashboard').classList.remove('hidden');
+                themeToggleBtnDashboard.querySelector('.dark-icon-dashboard').classList.add('hidden');
+            }
+
+            themeToggleBtnDashboard.addEventListener('click', () => {
+                if (htmlElementDashboard.classList.contains('dark')) {
+                    htmlElementDashboard.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                    themeToggleBtnDashboard.querySelector('.light-icon-dashboard').classList.remove('hidden');
+                    themeToggleBtnDashboard.querySelector('.dark-icon-dashboard').classList.add('hidden');
+                } else {
+                    htmlElementDashboard.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeToggleBtnDashboard.querySelector('.light-icon-dashboard').classList.add('hidden');
+                    themeToggleBtnDashboard.querySelector('.dark-icon-dashboard').classList.remove('hidden');
+                }
+            });
+
+            // Dummy data and functions for dashboard interactivity
+            const botStatusElement = document.getElementById('bot-status');
+            const startBotBtn = document.getElementById('start-bot-btn');
+            const stopBotBtn = document.getElementById('stop-bot-btn');
+            const botLogs = document.getElementById('bot-logs');
+            const derivBalance = document.getElementById('deriv-balance');
+            const totalProfit = document.getElementById('total-profit');
+            const totalLoss = document.getElementById('total-loss');
+            const totalTrades = document.getElementById('total-trades');
+            const usernameDisplay = document.getElementById('username-display');
+            const planType = document.getElementById('plan-type');
+            const daysRemaining = document.getElementById('days-remaining');
+            const premiumEndDate = document.getElementById('premium-end-date');
+            const activeStrategy = document.getElementById('active-strategy');
+            const activeStake = document.getElementById('active-stake');
+            const activeDuration = document.getElementById('active-duration');
+
+            let isBotRunning = false;
+            let currentBalance = 1000.00; // Dummy starting balance
+            let profit = 0.00;
+            let loss = 0.00;
+            let trades = 0;
+
+            // Simulate user data (this would come from your backend login)
+            const userData = {
+                username: "DemoUser",
+                plan: "Premium (Teste)",
+                trial_days_left: 15,
+                trial_end_date: "26/06/2025",
+                initial_balance: 1000.00,
+                strategy_config: {
+                    name: "RSI + Bollinger (AND)",
+                    stake: 1.00,
+                    duration: 60
+                }
+            };
+
+            usernameDisplay.textContent = userData.username;
+            planType.textContent = userData.plan;
+            daysRemaining.textContent = `${userData.trial_days_left} dias`;
+            premiumEndDate.textContent = userData.trial_end_date;
+            derivBalance.textContent = currentBalance.toFixed(2);
+            activeStrategy.textContent = userData.strategy_config.name;
+            activeStake.textContent = userData.strategy_config.stake.toFixed(2);
+            activeDuration.textContent = `${userData.strategy_config.duration}s`;
+
+
+            function updateBotStatus(status) {
+                if (status === 'running') {
+                    botStatusElement.textContent = 'Ligado';
+                    botStatusElement.classList.remove('text-red-500');
+                    botStatusElement.classList.add('text-green-500');
+                    startBotBtn.disabled = true;
+                    stopBotBtn.disabled = false;
+                } else {
+                    botStatusElement.textContent = 'Desligado';
+                    botStatusElement.classList.remove('text-green-500');
+                    botStatusElement.classList.add('text-red-500');
+                    startBotBtn.disabled = false;
+                    stopBotBtn.disabled = true;
+                }
+            }
+
+            function addLog(message, level = 'info') {
+                const p = document.createElement('p');
+                p.textContent = `[${level.toUpperCase()}] ${new Date().toLocaleTimeString()}: ${message}`;
+                if (level === 'success') p.classList.add('text-green-500');
+                if (level === 'error') p.classList.add('text-red-500');
+                if (level === 'warning') p.classList.add('text-yellow-500');
+                botLogs.appendChild(p);
+                botLogs.scrollTop = botLogs.scrollHeight; // Auto-scroll to bottom
+            }
+
+            let tradeInterval;
+
+            startBotBtn.addEventListener('click', () => {
+                if (!isBotRunning) {
+                    isBotRunning = true;
+                    updateBotStatus('running');
+                    addLog('Bot iniciado. Conectando à Deriv...', 'info');
+
+                    // Simulate trading activity
+                    tradeInterval = setInterval(() => {
+                        trades++;
+                        totalTrades.textContent = trades;
+                        const isWin = Math.random() > 0.5; // 50/50 chance for win/loss
+                        const tradeAmount = userData.strategy_config.stake;
+                        const payoutFactor = 1.8; // Example payout factor
+
+                        if (isWin) {
+                            const winAmount = tradeAmount * (payoutFactor - 1);
+                            profit += winAmount;
+                            currentBalance += winAmount;
+                            addLog(`Operação VITORIOSA! Ganho: $${winAmount.toFixed(2)}`, 'success');
+                        } else {
+                            loss += tradeAmount;
+                            currentBalance -= tradeAmount;
+                            addLog(`Operação DERROTADA! Perda: $${tradeAmount.toFixed(2)}`, 'error');
+                        }
+                        derivBalance.textContent = currentBalance.toFixed(2);
+                        totalProfit.textContent = profit.toFixed(2);
+                        totalLoss.textContent = loss.toFixed(2);
+
+                        if (currentBalance <= 0) {
+                            addLog('Saldo insuficiente. Bot parado automaticamente.', 'error');
+                            stopBotBtn.click(); // Stop the bot
+                        }
+                    }, 5000); // Simulate a trade every 5 seconds
+                }
+            });
+
+            stopBotBtn.addEventListener('click', () => {
+                if (isBotRunning) {
+                    isBotRunning = false;
+                    updateBotStatus('stopped');
+                    addLog('Bot parado.', 'info');
+                    clearInterval(tradeInterval);
+                }
+            });
+
+            // Initial bot status
+            updateBotStatus('stopped');
+        });
+    </script>
+</body>
+</html>
